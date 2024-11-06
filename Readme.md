@@ -119,4 +119,4 @@ To integrate Ollama with your Go project, follow these steps:
     ```
 3. **Make API Requests** to localhost and pass the Student object to generate the summary. Perform prompt engineering to get the summary for the Student.
 
-Note: By default, Ollama listens on port 11434, but in this project, Ollama is listening on port 12345. Hence, while making API requests to Ollama, use port 11435 or change the environment variable `OLLAMA_PORT` in the `.env` file to 12345 or as per your Ollama port.
+Note: By default, Ollama listens on port 11434. This project is configured to use `OLLAMA_PORT=12345` If you need to use a different port, set the `OLLAMA_PORT` environment variable in the `.env` file to your desired port number (e.g., `OLLAMA_PORT=12345`).

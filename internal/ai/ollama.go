@@ -4,9 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"io"
+	"log"
+	"net/http"
+	"os"
+
 	"github.com/AashishKumar-3002/FealtyX/internal/models"
+	"github.com/joho/godotenv"
 )
 
 type GenerateRequest struct { 
@@ -29,23 +33,35 @@ type GenerateResponse struct {
 
 
 func GenerateStudentSummary(student models.Student) (string, error) {
-    prompt := fmt.Sprintf("Generate a brief summary for a student named %s, who is %d years old and has the email %s.", student.Name, student.Age, student.Email)
-    const ollamaURL = "http://localhost:12345/api/generate"
-    requestBody := GenerateRequest{ 
-        Model: "llama3.2:1b", 
-        Prompt: prompt, 
-        Stream: false, 
-    } 
-    jsonStr, err := json.Marshal(requestBody)
-    if err != nil { 
-        return "", fmt.Errorf("error marshalling request body: %v", err) 
-    }
 
-    req, err := http.NewRequest("POST", ollamaURL, bytes.NewBuffer(jsonStr))
-    if err != nil { 
-        return "", fmt.Errorf("error creating request: %v", err) 
-    } 
-    req.Header.Set("Content-Type", "application/json")
+	// Load .env file
+	if err := godotenv.Load(); err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	// Get OLLAMA_PORT from environment variable
+	ollamaPort := os.Getenv("OLLAMA_PORT")
+	if ollamaPort == "" {
+		ollamaPort = "11434" // Default port if not set
+	}
+
+    prompt := fmt.Sprintf("Generate a brief summary for a student named %s, who is %d years old and has the email %s.", student.Name, student.Age, student.Email)
+	ollamaURL := fmt.Sprintf("http://localhost:%s/api/generate", ollamaPort)
+	requestBody := GenerateRequest{ 
+		Model: "llama3.2:1b", 
+		Prompt: prompt, 
+		Stream: false, 
+	} 
+	jsonStr, err := json.Marshal(requestBody)
+	if err != nil { 
+		return "", fmt.Errorf("error marshalling request body: %v", err) 
+	}
+
+	req, err := http.NewRequest("POST", ollamaURL, bytes.NewBuffer(jsonStr))
+	if err != nil { 
+		return "", fmt.Errorf("error creating request: %v", err) 
+	} 
+	req.Header.Set("Content-Type", "application/json")
 
     client := &http.Client{} 
     resp, err := client.Do(req) 
