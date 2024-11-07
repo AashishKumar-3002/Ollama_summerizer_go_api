@@ -1,122 +1,125 @@
 # FealtyX Student API
-FealtyX Student API is a RESTful API developed in Go for managing student data and generating summaries using Ollama.
+
+FealtyX Student API is a RESTful API developed in Go for managing student data and generating summaries using Ollama. It supports both in-memory storage and PostgreSQL database storage.
 
 ## Features
 
 - CRUD operations for student records
-- Persistent data storage with in-memory data storage
+- Flexible storage options: in-memory or PostgreSQL database
 - Student summary generation via Ollama
 - Concurrent-safe operations
 - Input validation
 
+## Deployed Base URL
+
+The API is deployed and accessible at:
+
+https://ollama-summerizer-go-api.onrender.com
+
+You can use this base URL to make requests to the API endpoints described below.
+
 ## Prerequisites
 
-- Go 1.16 or higher
-- PostgreSQL installed and running locally
+- Go 1.23.2 or higher
+- PostgreSQL (optional, for database storage)
 - Ollama installed and running locally
 
 ## Installation
 
 1. Clone the repository:
-    ```bash
-    git clone https://github.com/AashishKumar-3002/fealtyx-student-api.git
-    cd fealtyx-student-api
-    ```
+   
+   git clone https://github.com/AashishKumar-3002/FealtyX.git
+   cd FealtyX
+   
 
 2. Install dependencies:
-    ```bash
-    go mod tidy
-    ```
+   
+   go mod tidy
+   
 
-3. Set up PostgreSQL:
-    - Install PostgreSQL:
-        ```bash
-        sudo apt-get update
-        sudo apt-get install postgresql postgresql-contrib
-        ```
-    - Start PostgreSQL service:
-        ```bash
-        sudo service postgresql start
-        ```
-    - Create a database and user:
-        ```bash
-        sudo -u postgres psql
-        CREATE DATABASE fealtyx;
-        CREATE USER fealtyx_user WITH ENCRYPTED PASSWORD 'yourpassword';
-        GRANT ALL PRIVILEGES ON DATABASE fealtyx TO fealtyx_user;
-        \q
-        ```
+3. Set up PostgreSQL (optional):
+   - Install and start PostgreSQL
+   - Create a database and user for the application
 
-4. Create a `.env` file in the root directory with the following content:
-    ```env
-    DB_CONNECTION_STRING=postgres://fealtyx_user:yourpassword@localhost:5432/fealtyx?sslmode=disable
-    ```
-    Replace `yourpassword` with the password you set for the `fealtyx_user`.
+4. Create a .env file in the root directory with the following content:
+   
+   DATABASE_URL="postgres://username:password@localhost:5432/dbname?sslmode=disable"
+   PORT=8080
+   OLLAMA_PORT=12345
+   
+   Replace the DATABASE_URL with your PostgreSQL connection string. If left empty, the application will use in-memory storage.
 
 ## Usage
 
 1. Start the server:
-    ```bash
-    go run cmd/api/main.go
-    ```
-    The server will start on [http://localhost:8080](http://localhost:8080).
+   
+   go run main.go
+   
+   The server will start on the port specified in the .env file (default: 8080).
 
 2. Use the following endpoints:
+   - Create a student: POST /students
+   - Get all students: GET /students
+   - Get a student by ID: GET /students/{id}
+   - Update a student: PUT /students/{id}
+   - Delete a student: DELETE /students/{id}
+   - Generate a student summary: GET /students/{id}/summary
 
-    - Create a student: `POST /students`
-    - Get all students: `GET /students`
-    - Get a student by ID: `GET /students/{id}`
-    - Update a student: `PUT /students/{id}`
-    - Delete a student: `DELETE /students/{id}`
-    - Generate a student summary: `GET /students/{id}/summary`
+### API Examples
 
-## API Examples
+Replace http://localhost:8080 with https://ollama-summerizer-go-api.onrender.com when using the deployed version.
 
-### Create a student
+- Create a student
+  
+  curl -X POST -H "Content-Type: application/json" -d '{"name":"John Doe","age":20,"email":"john@example.com"}' https://ollama-summerizer-go-api.onrender.com/students
+  
 
-```bash
-curl -X POST -H "Content-Type: application/json" -d '{"name":"John Doe","age":20,"email":"john@example.com"}' http://localhost:8080/students
-```
+- Get all students
+  
+  curl https://ollama-summerizer-go-api.onrender.com/students
+  
 
-### Get all students
+- Get a student by ID
+  
+  curl https://ollama-summerizer-go-api.onrender.com/students/1
+  
 
-```bash
-curl http://localhost:8080/students
-```
+- Update a student
+  
+  curl -X PUT -H "Content-Type: application/json" -d '{"name":"John Doe","age":21,"email":"john.doe@example.com"}' https://ollama-summerizer-go-api.onrender.com/students/1
+  
 
-### Get a student by ID
+- Delete a student
+  
+  curl -X DELETE https://ollama-summerizer-go-api.onrender.com/students/1
+  
 
-```bash
-curl http://localhost:8080/students/1
-```
+- Generate a student summary
+  
+  curl https://ollama-summerizer-go-api.onrender.com/students/1/summary
+  
 
-### Update a student
+## Ollama Integration
 
-```bash
-curl -X PUT -H "Content-Type: application/json" -d '{"name":"John Doe","age":21,"email":"john.doe@example.com"}' http://localhost:8080/students/1
-```
+This project uses Ollama for generating student summaries. To set up Ollama:
 
-### Delete a student
+1. Install Ollama on your localhost by following the instructions at: https://github.com/ollama/ollama#quickstart
 
-```bash
-curl -X DELETE http://localhost:8080/students/1
-```
+2. Install the Llama3 language model (1b parameter version):
+   
+   ollama install llama3.2:1b
+   
 
-### Generate a student summary
+3. Ensure Ollama is running on the port specified in the .env file (default: 12345).
 
-```bash
-curl http://localhost:8080/students/1/summary
-```
+## Testing
 
-## Installation instructions for Ollama
+To run the tests, use the following command:
 
-To integrate Ollama with your Go project, follow these steps:
 
-1. **Install** Ollama on your localhost by following: https://github.com/ollama/ollama/blob/main/README.md#quickstart
-2. **Install Llama3** language model for Ollama. For this project, we are using the 1b parameter model. Hence, our model name is `llama3_1b`. To install the model, run the following command:
-    ```bash
-    ollama install llama3_1b
-    ```
-3. **Make API Requests** to localhost and pass the Student object to generate the summary. Perform prompt engineering to get the summary for the Student.
+go test ./...
 
-Note: By default, Ollama listens on port 11434. This project is configured to use `OLLAMA_PORT=12345` If you need to use a different port, set the `OLLAMA_PORT` environment variable in the `.env` file to your desired port number (e.g., `OLLAMA_PORT=12345`).
+
+## License
+
+This project is licensed under the Apache License 2.0. See the LICENSE file for details.
