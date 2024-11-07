@@ -22,7 +22,7 @@ func main() {
 
 	// Get the database URL from the environment
 	dbURL := os.Getenv("DATABASE_URL")
-
+	log.Println("DATABASE_URL:", dbURL)
 	if dbURL == "" {
 		log.Println("DATABASE_URL is empty, using in-memory database")
 		store := storage.NewStorage()
@@ -48,7 +48,7 @@ func main() {
 	} else {
 
 		// Connect to the database
-		db, err := database.Connect(os.Getenv("DATABASE_URL"))
+		db, err := database.Connect(dbURL)
 		if err != nil {
 			log.Fatal(err)
 		}
