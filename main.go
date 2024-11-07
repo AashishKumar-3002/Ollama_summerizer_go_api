@@ -4,7 +4,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 
 	"github.com/AashishKumar-3002/FealtyX/internal/storage"
 	"github.com/AashishKumar-3002/FealtyX/internal/memory"
@@ -17,21 +16,8 @@ import (
 
 func main() {
 	// Load .env file
-	secretFile := ".env"
-	paths := []string{
-		filepath.Join("/", "etc", "secrets", secretFile),
-		filepath.Join(".", secretFile),
-	}
-
-	var err error
-	for _, path := range paths {
-		err = godotenv.Load(path)
-		if err == nil {
-			break
-		}
-	}
-	if err != nil {
-		log.Fatal("Error loading secret file")
+	if err := godotenv.Load(); err != nil {
+		log.Fatal("Error loading .env file")
 	}
 
 	// Get the database URL from the environment
