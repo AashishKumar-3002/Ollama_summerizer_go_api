@@ -68,17 +68,17 @@ func (s *Student) Update(db *sql.DB, id int) error {
 	return nil
 }
 
-func DeleteStudent(db *sql.DB, id int) error {
+func DeleteStudent(db *sql.DB, id int) (int,error) {
 	res, err := db.Exec("DELETE FROM students WHERE id = $1", id)
 	if err != nil {
-		return err
+		return 0 , err
 	}
 	count, err := res.RowsAffected()
 	if err != nil {
-		return err
+		return 0, err
 	}
 	if count == 0 {
-		return errors.New("student not found")
+		return 0, nil
 	}
-	return nil
+	return id, nil
 }

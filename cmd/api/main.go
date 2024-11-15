@@ -66,6 +66,7 @@ func main() {
 		r.HandleFunc("/students/{id}", h.GetStudent).Methods("GET")
 		r.HandleFunc("/students/{id}", h.UpdateStudent).Methods("PUT")
 		r.HandleFunc("/students/{id}", h.DeleteStudent).Methods("DELETE")
+		r.HandleFunc("/students", h.DeleteStudentByIds).Methods("DELETE")
 		r.HandleFunc("/students/{id}/summary", h.GetStudentSummary).Methods("GET")
 
 		// Start server

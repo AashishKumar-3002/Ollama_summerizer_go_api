@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/AashishKumar-3002/FealtyX/internal/ai"
 	"github.com/AashishKumar-3002/FealtyX/internal/models"
@@ -93,6 +94,34 @@ func (h *Handler) UpdateStudent(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(student)
 }
+func (h *Handler) DeleteStudentByIds(w http.ResponseWriter, r *http.Request) {
+	idsParam := r.URL.Query().Get("ids")
+	if idsParam == "" {
+		http.Error(w, "No IDs provided", http.StatusBadRequest)
+		return
+	}
+	idsStrings := strings.Split(idsParam, ",")
+	var deletedIds []int
+	for _, idStr := range idsStrings {
+		id, err := strconv.Atoi(strings.TrimSpace(idStr))
+		if err != nil {
+			http.Error(w, "Invalid ID format", http.StatusBadRequest)
+			return
+		}
+		deletedId, err := models.DeleteStudent(h.DB, id)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if deletedId == id {
+			deletedIds = append(deletedIds, id)
+		}
+	}
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"deleted_ids": deletedIds,
+	})
+}
 
 func (h *Handler) DeleteStudent(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(mux.Vars(r)["id"])
@@ -101,7 +130,7 @@ func (h *Handler) DeleteStudent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := models.DeleteStudent(h.DB, id); err != nil {
+	if _ , err := models.DeleteStudent(h.DB, id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
