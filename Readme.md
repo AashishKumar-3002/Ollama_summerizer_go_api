@@ -58,7 +58,7 @@ You can use this base URL to make requests to the API endpoints described below.
 1. Start the server:
 
    ```bash
-   go run main.go
+   go run cmd/api/main.go
    ```
 
    The server will start on the port specified in the `.env` file (default: 8080).

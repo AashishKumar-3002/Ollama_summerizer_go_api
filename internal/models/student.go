@@ -10,7 +10,7 @@ import (
 type Student struct {
 	ID    int    `json:"id"`
 	Name  string `json:"name" validate:"required"`
-	Age   int    `json:"age" validate:"required,gte=0,lte=150"`
+	Age   int    `json:"age" validate:"required,gte=1,lte=150"`
 	Email string `json:"email" validate:"required,email"`
 }
 
