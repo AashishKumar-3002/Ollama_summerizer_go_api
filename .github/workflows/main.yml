@@ -1,0 +1,69 @@
+name: Test Manual Approval Workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+      branch_name:
+        description: 'Branch to deploy'
+        required: true
+        type: string
+      vendor_list:
+        description: 'JSON array of vendors'
+        required: true
+        type: string
+        default: '["vendor1", "vendor2"]'
+
+jobs:
+  # Simulate a terraform plan job that the manual approval will depend on
+  terraform-plan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Simulate terraform plan
+        run: |
+          echo "Simulating terraform plan for ${{ github.event.inputs.environment }}"
+          echo "Plan completed successfully"
+
+  # Your manual approval job
+  Manual-approval:
+    name: "Manual Approval"
+    runs-on: ubuntu-latest
+    needs: terraform-plan
+    permissions:
+      contents: read
+      issues: write
+    steps:
+    - uses: trstringer/manual-approval@v1
+      timeout-minutes: 30
+      with:
+        secret: "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"
+        approvers: AashishKumar-3002
+        minimum-approvals: 1
+        issue-title: 'vendor Infra pipeline CI/CD on ${{github.event.inputs.environment}} environment awaiting approval'
+        issue-body: "Please approve or deny the deployment of the vendor infra pipeline CI/CD on ${{github.event.inputs.environment}} environment using ${{github.event.inputs.branch_name}} for ${{fromJson(github.event.inputs.vendor_list)}}"
+        exclude-workflow-initiator-as-approver: false
+        additional-approved-words: 'approve,approved,lgtm,yes'
+        additional-denied-words: 'deny,denied,no'
+
+  # Add a final job to demonstrate the workflow continues after approval
+  deploy:
+    name: "Deploy"
+    runs-on: ubuntu-latest
+    needs: Manual-approval
+    steps:
+      - name: Deploy
+        run: |
+          echo "Deployment would happen here after manual approval"
+          echo "Environment: ${{ github.event.inputs.environment }}"
+          echo "Branch: ${{ github.event.inputs.branch_name }}"
+          echo "Vendors: ${{ github.event.inputs.vendor_list }}"
