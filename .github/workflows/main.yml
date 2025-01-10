@@ -22,119 +22,44 @@ on:
         default: '["vendor1", "vendor2"]'
 
 jobs:
+  # Simulate a terraform plan job that the manual approval will depend on
   terraform-plan:
     runs-on: ubuntu-latest
-    outputs:
-      plan_output: ${{ steps.plan.outputs.stdout }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
       
       - name: Simulate terraform plan
-        id: plan
         run: |
-          # Simulate terraform plan output
-          PLAN_OUTPUT="
-          Terraform will perform the following actions:
+          echo "Simulating terraform plan for ${{ github.event.inputs.environment }}"
+          echo "Plan completed successfully"
 
-          # aws_instance.example will be created
-          + resource \"aws_instance\" \"example\" {
-              + ami           = \"ami-12345678\"
-              + instance_type = \"t2.micro\"
-              + tags = {
-                  + Name = \"example\"
-                }
-            }
-
-          Plan: 1 to add, 0 to change, 0 to destroy.
-          "
-          echo "stdout<<EOF" >> $GITHUB_OUTPUT
-          echo "$PLAN_OUTPUT" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-  request-approval:
+  # Your manual approval job
+  Manual-approval:
+    name: "Manual Approval"
+    runs-on: ubuntu-latest
     needs: terraform-plan
-    runs-on: ubuntu-latest
-    environment: 
-      name: ${{ github.event.inputs.environment }}-approval
+    permissions:
+      contents: read
+      issues: write
     steps:
-      - name: Create Approval Issue
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const planOutput = `${{ needs.terraform-plan.outputs.plan_output }}`;
-            
-            const issueBody = `# Deployment Approval Request
-            
-            ## Environment Details
-            - Environment: ${context.payload.inputs.environment}
-            - Branch: ${context.payload.inputs.branch_name}
-            - Vendors: ${context.payload.inputs.vendor_list}
-            
-            ## Terraform Plan Output
-            \`\`\`hcl
-            ${planOutput}
-            \`\`\`
-            
-            ## Instructions
-            Please review the plan above and comment:
-            - \`approved\` to proceed with the deployment
-            - \`denied\` to reject the deployment
-            
-            > Note: This approval request will timeout after 30 minutes.`;
-            
-            const issue = await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: `Approval needed for ${context.payload.inputs.environment} deployment`,
-              body: issueBody
-            });
-            
-            console.log(`Created issue #${issue.data.number}`);
-            core.setOutput('issue_number', issue.data.number);
+    - uses: trstringer/manual-approval@v1
+      timeout-minutes: 30
+      with:
+        secret: ${{ secrets.PAT_TOKEN }}
+        approvers: AashishKumar-3002
+        minimum-approvals: 1
+        issue-title: 'vendor Infra pipeline CI/CD on ${{github.event.inputs.environment}} environment awaiting approval'
+        issue-body: "Please approve or deny the deployment of the vendor infra pipeline CI/CD on ${{github.event.inputs.environment}} environment using ${{github.event.inputs.branch_name}} for ${{fromJson(github.event.inputs.vendor_list)}}"
+        exclude-workflow-initiator-as-approver: false
+        additional-approved-words: 'approve,approved,lgtm,yes'
+        additional-denied-words: 'deny,denied,no'
 
-      - name: Wait for Approval
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const issueNumber = core.getOutput('issue_number');
-            
-            let approved = false;
-            let timeout = 1800; // 30 minutes in seconds
-            let interval = 10; // Check every 10 seconds
-            
-            while (timeout > 0) {
-              const comments = await github.rest.issues.listComments({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issueNumber
-              });
-              
-              for (const comment of comments.data) {
-                if (comment.body.toLowerCase().includes('approved')) {
-                  approved = true;
-                  break;
-                }
-                if (comment.body.toLowerCase().includes('denied')) {
-                  throw new Error('Deployment denied');
-                }
-              }
-              
-              if (approved) break;
-              
-              await new Promise(resolve => setTimeout(resolve, interval * 1000));
-              timeout -= interval;
-            }
-            
-            if (!approved) {
-              throw new Error('Approval timeout');
-            }
-
+  # Add a final job to demonstrate the workflow continues after approval
   deploy:
-    needs: request-approval
+    name: "Deploy"
     runs-on: ubuntu-latest
+    needs: Manual-approval
     steps:
       - name: Deploy
         run: |
