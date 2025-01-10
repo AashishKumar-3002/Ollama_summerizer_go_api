@@ -46,7 +46,7 @@ jobs:
     - uses: trstringer/manual-approval@v1
       timeout-minutes: 30
       with:
-        secret: "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"
+        secret: ${{ secrets.PAT_TOKEN }}
         approvers: AashishKumar-3002
         minimum-approvals: 1
         issue-title: 'vendor Infra pipeline CI/CD on ${{github.event.inputs.environment}} environment awaiting approval'
